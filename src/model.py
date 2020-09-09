@@ -28,3 +28,4 @@ class TweetModel(transformers.BertPreTrainedModel):
         end_logits = end_logits.squeeze(-1)
 
         return start_logits, end_logits
+        
