@@ -60,4 +60,4 @@ def predict(data_loader, model, device=torch.device('cpu')):
                     offsets=offsets[px]
                 )
                 final_output.append(output_sentence)
-            print(final_output)
+    return final_output
