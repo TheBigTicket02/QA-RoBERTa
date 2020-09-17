@@ -5,28 +5,26 @@ import torch
 import torch.nn as nn
 from tqdm.autonotebook import tqdm
 
+
 def loss_fn(start_logits, end_logits, start_positions, end_positions):
     loss_fct = nn.CrossEntropyLoss()
     start_loss = loss_fct(start_logits, start_positions)
     end_loss = loss_fct(end_logits, end_positions)
-    total_loss = (start_loss + end_loss)
+    total_loss = start_loss + end_loss
     return total_loss
 
+
 def calculate_jaccard_score(
-    original_tweet, 
-    target_string, 
-    sentiment_val, 
-    idx_start, 
-    idx_end, 
-    offsets):
-    
+    original_tweet, target_string, sentiment_val, idx_start, idx_end, offsets
+):
+
     if idx_end < idx_start:
         idx_end = idx_start
-    
-    filtered_output  = ""
+
+    filtered_output = ""
     for ix in range(idx_start, idx_end + 1):
-        filtered_output += original_tweet[offsets[ix][0]: offsets[ix][1]]
-        if (ix+1) < len(offsets) and offsets[ix][1] < offsets[ix+1][0]:
+        filtered_output += original_tweet[offsets[ix][0] : offsets[ix][1]]
+        if (ix + 1) < len(offsets) and offsets[ix][1] < offsets[ix + 1][0]:
             filtered_output += " "
 
     if sentiment_val == "neutral" or len(original_tweet.split()) < 2:
@@ -35,13 +33,14 @@ def calculate_jaccard_score(
     jac = 0
     return jac, filtered_output
 
+
 def train_fn(data_loader, model, optimizer, device, scheduler=None):
     model.train()
     losses = utils.AverageMeter()
     jaccards = utils.AverageMeter()
 
     tk0 = tqdm(data_loader, total=len(data_loader))
-    
+
     for _, d in enumerate(tk0):
 
         ids = d["ids"]
@@ -64,9 +63,7 @@ def train_fn(data_loader, model, optimizer, device, scheduler=None):
 
         model.zero_grad()
         outputs_start, outputs_end = model(
-            ids=ids,
-            mask=mask,
-            token_type_ids=token_type_ids,
+            ids=ids, mask=mask, token_type_ids=token_type_ids,
         )
         loss = loss_fn(outputs_start, outputs_end, targets_start, targets_end)
         loss.backward()
@@ -85,7 +82,7 @@ def train_fn(data_loader, model, optimizer, device, scheduler=None):
                 sentiment_val=tweet_sentiment,
                 idx_start=np.argmax(outputs_start[px, :]),
                 idx_end=np.argmax(outputs_end[px, :]),
-                offsets=offsets[px]
+                offsets=offsets[px],
             )
             jaccard_scores.append(jaccard_score)
 
@@ -93,11 +90,12 @@ def train_fn(data_loader, model, optimizer, device, scheduler=None):
         losses.update(loss.item(), ids.size(0))
         tk0.set_postfix(loss=losses.avg, jaccard=jaccards.avg)
 
+
 def eval_fn(data_loader, model, device):
     model.eval()
     losses = utils.AverageMeter()
     jaccards = utils.AverageMeter()
-    
+
     with torch.no_grad():
         tk0 = tqdm(data_loader, total=len(data_loader))
         for bi, d in enumerate(tk0):
@@ -118,9 +116,7 @@ def eval_fn(data_loader, model, device):
             targets_end = targets_end.to(device, dtype=torch.long)
 
             outputs_start, outputs_end = model(
-                ids=ids,
-                mask=mask,
-                token_type_ids=token_type_ids
+                ids=ids, mask=mask, token_type_ids=token_type_ids
             )
             loss = loss_fn(outputs_start, outputs_end, targets_start, targets_end)
             outputs_start = torch.softmax(outputs_start, dim=1).cpu().detach().numpy()
@@ -135,14 +131,14 @@ def eval_fn(data_loader, model, device):
                     sentiment_val=tweet_sentiment,
                     idx_start=np.argmax(outputs_start[px, :]),
                     idx_end=np.argmax(outputs_end[px, :]),
-                    offsets=offsets[px]
+                    offsets=offsets[px],
                 )
                 jaccard_scores.append(jaccard_score)
 
             jaccards.update(np.mean(jaccard_scores), ids.size(0))
             losses.update(loss.item(), ids.size(0))
             tk0.set_postfix(loss=losses.avg, jaccard=jaccards.avg)
-    
+
     print(f"Jaccard = {jaccards.avg}")
     return jaccards.avg
-    
+
