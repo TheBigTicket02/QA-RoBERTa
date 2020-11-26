@@ -1,7 +1,6 @@
 # Tweet Sentiment Extraction
 
 * Goal: Extract support phrases for sentiment labels
-![Dist](https://i.ibb.co/mStsTbJ/dist.png)
 
 * Evaluation Metric: word-level Jaccard score
 ![Jaccard](https://images.deepai.org/glossary-terms/jaccard-index-391304.jpg)
