@@ -6,6 +6,7 @@
 ![Jaccard](https://images.deepai.org/glossary-terms/jaccard-index-391304.jpg)
 
 * Trained RoBERTa model
+
 | Model       | Jaccard Score |
 | ------------|:-------------:|
 | RoBERTa     | 0.7017        |
